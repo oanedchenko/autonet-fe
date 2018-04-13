@@ -1,0 +1,19 @@
+{
+  "name": "autonet-frontend",
+  "version": "1.0.0",
+  "description": "Frontend wb app with vuejs for auto net.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JoseAlavez/autonet-frontend.git"
+  },
+  "author": "Jose Alavez & Oleg Anedchenko",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/JoseAlavez/autonet-frontend/issues"
+  },
+  "homepage": "https://github.com/JoseAlavez/autonet-frontend#readme"
+}
