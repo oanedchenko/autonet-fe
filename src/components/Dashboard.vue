@@ -1,66 +1,147 @@
 <template>
-  <div class="card-expansion">
-    <md-card>
-      <md-card-media>
-        <img src="../assets/profile-pic.png" alt="People">
-      </md-card-media>
+  <div>
+    <md-toolbar>
+      <h3>Department:</h3>
+      <md-menu md-close-on-select>
+        <md-button md-menu-trigger>{{selectedDepartment.name}}</md-button>
+        <md-menu-content>
+          <md-menu-item v-for="department in departments" @click="selectDepartment(department)">{{department.name}}
+          </md-menu-item>
+        </md-menu-content>
+      </md-menu>
+      <h3>Team:</h3>
+      <md-menu md-close-on-select>
+        <md-button md-menu-trigger>{{selectedTeam.name}}</md-button>
+        <md-menu-content>
+          <md-menu-item v-for="team in teams" @click="selectTeam(team)">{{team.name}}</md-menu-item>
+        </md-menu-content>
+      </md-menu>
+    </md-toolbar>
+    <div class="users-cards">
+      <div v-for="user in users" class="card-expansion">
+        <md-card>
+          <md-card-media>
+            <img src="../assets/gopher_256x256.png" style="width: 200px;" alt="People">
+          </md-card-media>
 
-      <md-card-header>
-        <div class="md-title">{{title}}</div>
-        <div class="md-subhead">{{subhead}}</div>
-      </md-card-header>
+          <md-card-header>
+            <div class="md-title">{{user.firstName}} {{user.lastName}}</div>
+            <div class="md-subhead">{{user.jobTitle}}</div>
+          </md-card-header>
 
-      <md-card-content>
-        <hr/>
-        <div class="context-box">
-          <div>
-            <md-icon class="md-size-x">email</md-icon>
-            {{email}}
-          </div>
-          <div>
-            <md-icon class="md-size-x">sms</md-icon>
-            {{slack}}
-          </div>
-          <div>
-            <md-icon class="md-size-x">add_location</md-icon>
-            {{location}}
-          </div>
-        </div>
-      </md-card-content>
-
-      <md-card-expand>
-        <md-card-actions md-alignment="space-between">
-          <div>
-          </div>
-
-          <md-card-expand-trigger>
-            <md-button class="md-icon-button">
-              <md-icon>keyboard_arrow_down</md-icon>
-            </md-button>
-          </md-card-expand-trigger>
-        </md-card-actions>
-
-        <md-card-expand-content>
           <md-card-content>
-            {{details}}
+            <hr/>
+            <div class="context-box">
+              <div v-for="contact in user.contacts">
+                <md-icon class="md-size-x">{{contact.type}}</md-icon>
+                {{contact.value}}
+              </div>
+            </div>
           </md-card-content>
-        </md-card-expand-content>
-      </md-card-expand>
-    </md-card>
+
+          <md-card-expand>
+            <md-card-actions md-alignment="space-between">
+              <div>
+              </div>
+
+              <md-card-expand-trigger>
+                <md-button class="md-icon-button">
+                  <md-icon>keyboard_arrow_down</md-icon>
+                </md-button>
+              </md-card-expand-trigger>
+            </md-card-actions>
+
+            <md-card-expand-content>
+              <md-card-content>
+                <!--todo: we do not have such field yet :)-->
+                {{user.details}}
+              </md-card-content>
+            </md-card-expand-content>
+          </md-card-expand>
+        </md-card>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
+  import axios from 'axios';
+
+  var e = {name: " - ALL - "};
+
   export default {
     name: 'Dashboard',
-    data () {
+    data() {
       return {
-        title: 'Jose ALavez',
-        subhead: 'Software Engineer',
-        email: 'jose.alavez@auto1.com',
-        slack: 'jose.alavez',
-        location: 'Berlin HQ - Hall A',
-        details: 'My main responsibility is to fight the crime with my high tech car KITT. For any related requests please contact me, preferable via slack, and i will either provide my help or redirect you to the right person.'
+        departments: [],
+        selectedDepartment: e,
+        teams: [],
+        selectedTeam: e,
+        users: []
+      }
+    },
+    created: function () {
+      axios.get('http://127.0.0.1:9090/department')
+        .then(resp => {
+          this.departments = resp.data.items;
+        })
+        .catch(e => {
+          console.log(e);
+        });
+
+      this.loadTeams();
+      this.loadUsers();
+    },
+    methods: {
+      selectDepartment: function (department) {
+        this.selectedDepartment = department || e;
+        console.log("Selected department: " + JSON.stringify(department));
+        this.loadTeams();
+        this.loadUsers();
+      },
+      selectTeam: function (team) {
+        this.selectedTeam = team || e;
+        console.log("Selected team: " + JSON.stringify(team));
+        this.loadUsers();
+      },
+      loadTeams: function() {
+        var params = {};
+        if (this.selectedDepartment && this.selectedDepartment.id) {
+          params.departmentId = this.selectedDepartment.id;
+        }
+
+        console.log("Team request params: " + JSON.stringify(params));
+
+        axios.get('http://127.0.0.1:9090/team', {params: params})
+          .then(resp => {
+            this.teams = [e];
+            this.teams = this.teams.concat(resp.data.items);
+          })
+          .catch(e => {
+            console.log(e);
+          });
+      },
+      loadUsers: function() {
+        var params = {};
+
+        if (this.selectedDepartment && this.selectedDepartment.id) {
+          params.departmentId = this.selectedDepartment.id;
+        }
+
+        if (this.selectedTeam && this.selectedTeam.id) {
+          params.teamId = this.selectedTeam.id;
+        }
+
+        console.log("User request params: " + JSON.stringify(params));
+
+        axios.get('http://127.0.0.1:9090/user', {params: params})
+          .then(resp => {
+            this.users = resp.data.items || [];
+            this.users.forEach(u => u.contacts.forEach(c => c.type = c.type.toLowerCase()));
+          })
+          .catch(e => {
+            console.log(e);
+          });
       }
     }
   }
@@ -69,20 +150,21 @@
 <style scoped>
   .card-expansion {
     height: 480px;
+    float: left;
   }
 
   .md-card {
-    width: 320px;
-    margin: 4px;
+    width: 290px;
+    margin: 10px;
     display: inline-block;
     vertical-align: top;
-    border-radius: 5%;
+    border-radius: 4px;
     font-family: 'Ubuntu', sans-serif;
   }
 
   .md-card-media img {
     width: auto;
-    margin-top: 30px;
+    margin-top: 20px;
     border-radius: 50%;
     border: 5px solid white;
     box-shadow: 0px 0px 5px #888888;
@@ -90,9 +172,14 @@
 
   .context-box {
     padding-top: 10px;
-    max-width: 200px;
+    max-width: 250px;
     text-align: left;
     margin: 0 auto;
+  }
+
+  .users-cards {
+    alignment: center;
+    padding: 5px;
   }
 
 </style>
