@@ -67,7 +67,11 @@
 <script>
   import axios from 'axios';
 
-  var e = {name: " - ALL - "};
+  const api = axios.create({
+    baseURL: process.env.API_BASE_URL,
+  });
+
+  const e = {name: " - ALL - "};
 
   export default {
     name: 'Dashboard',
@@ -81,9 +85,10 @@
       }
     },
     created: function () {
-      axios.get('http://127.0.0.1:9090/department')
+      api.get('/department')
         .then(resp => {
-          this.departments = resp.data.items;
+          this.departments = [e];
+          this.departments = this.departments.concat(resp.data.items);
         })
         .catch(e => {
           console.log(e);
@@ -112,7 +117,7 @@
 
         console.log("Team request params: " + JSON.stringify(params));
 
-        axios.get('http://127.0.0.1:9090/team', {params: params})
+        api.get('/team', {params: params})
           .then(resp => {
             this.teams = [e];
             this.teams = this.teams.concat(resp.data.items);
@@ -134,7 +139,7 @@
 
         console.log("User request params: " + JSON.stringify(params));
 
-        axios.get('http://127.0.0.1:9090/user', {params: params})
+        api.get('/user', {params: params})
           .then(resp => {
             this.users = resp.data.items || [];
             this.users.forEach(u => u.contacts.forEach(c => c.type = c.type.toLowerCase()));
